@@ -267,14 +267,27 @@ def post_comments(request, pk):
     post = get_object_or_404(Post, pk=pk)
     
     if request.method == 'GET':
-        comments = post.comments.all()
-        serializer = CommentSerializer(comments, many=True)
+        # Sadece ana yorumları getir (parent=None)
+        comments = post.comments.filter(parent=None)
+        serializer = CommentSerializer(comments, many=True, context={'request': request})
         return Response(serializer.data)
     
     elif request.method == 'POST':
         serializer = CommentSerializer(data=request.data)
         if serializer.is_valid():
-            serializer.save(user=request.user, post=post)
+            # Eğer parent_id verilmişse, bu bir yanıt yorumudur
+            parent_id = request.data.get('parent')
+            parent = None
+            
+            if parent_id:
+                # Parent yorumun bu posta ait olduğundan emin ol
+                parent = get_object_or_404(Comment, pk=parent_id, post=post)
+                
+                # Eğer parent zaten bir yanıtsa (nested reply), ana yoruma yanıt olarak ekle
+                if parent.parent:
+                    parent = parent.parent
+            
+            serializer.save(user=request.user, post=post, parent=parent)
             
             # Yorum sayısını güncelle
             post.comments_count = post.comments.count()
@@ -313,3 +326,15 @@ def comment_detail(request, post_pk, comment_pk):
         post.save()
         
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def comment_replies(request, post_pk, comment_pk):
+    """
+    GET: Belirli bir yorumun tüm yanıtlarını listeler
+    """
+    comment = get_object_or_404(Comment, pk=comment_pk, post__pk=post_pk, parent=None)
+    replies = comment.replies.all()
+    serializer = CommentSerializer(replies, many=True, context={'request': request})
+    return Response(serializer.data)

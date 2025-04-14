@@ -12,11 +12,26 @@ class UserBriefSerializer(serializers.ModelSerializer):
 
 class CommentSerializer(serializers.ModelSerializer):
     user = UserBriefSerializer(read_only=True)
+    replies = serializers.SerializerMethodField()
+    reply_count = serializers.SerializerMethodField()
     
     class Meta:
         model = Comment
-        fields = ['id', 'user', 'content', 'created_at', 'updated_at']
-        read_only_fields = ['user', 'created_at', 'updated_at']
+        fields = ['id', 'user', 'content', 'created_at', 'updated_at', 'parent', 'replies', 'reply_count']
+        read_only_fields = ['user', 'created_at', 'updated_at', 'replies', 'reply_count']
+    
+    def get_replies(self, obj):
+        # Only return direct replies if this is a parent comment
+        if obj.parent is None:
+            # Limit to first 3 replies
+            replies = obj.replies.all()[:3]
+            return CommentSerializer(replies, many=True, context=self.context).data
+        return []
+    
+    def get_reply_count(self, obj):
+        if obj.parent is None:
+            return obj.replies.count()
+        return 0
 
 
 class PostMediaSerializer(serializers.ModelSerializer):
