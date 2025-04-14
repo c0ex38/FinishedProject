@@ -7,7 +7,6 @@ from django.contrib.auth import get_user_model
 from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError
 from rest_framework_simplejwt.tokens import RefreshToken
-from rest_framework_simplejwt.token_blacklist.models import OutstandingToken, BlacklistedToken
 from .serializers import UserSerializer
 
 User = get_user_model()
@@ -127,3 +126,100 @@ def logout_user(request):
             return Response({"error": "Refresh token gerekli."}, status=status.HTTP_400_BAD_REQUEST)
     except Exception as e:
         return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(['GET', 'POST'])
+@permission_classes([IsAuthenticated])
+@parser_classes([MultiPartParser, FormParser])
+def user_profile(request):
+    """
+    GET: Kullanıcı profilini görüntüler
+    POST: Kullanıcı profilini günceller
+    """
+    user = request.user
+    
+    if request.method == 'GET':
+        serializer = UserSerializer(user)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+    
+    elif request.method == 'POST':
+        # Değiştirilmemesi gereken alanları request.data'dan çıkar
+        mutable_data = request.data.copy()
+        
+        # id, username ve signup_method alanlarını çıkar
+        if 'id' in mutable_data:
+            mutable_data.pop('id')
+        if 'username' in mutable_data:
+            mutable_data.pop('username')
+        if 'signup_method' in mutable_data:
+            mutable_data.pop('signup_method')
+        
+        serializer = UserSerializer(user, data=mutable_data, partial=True)
+        
+        if serializer.is_valid():
+            # Şifre değişikliği varsa ayrıca işle
+            if 'password' in request.data:
+                password = request.data.get('password')
+                try:
+                    validate_password(password)
+                    user.set_password(password)
+                except ValidationError as e:
+                    return Response({'password': e.messages}, status=status.HTTP_400_BAD_REQUEST)
+            
+            # Diğer alanları güncelle
+            serializer.save()
+            
+            # Şifre alanını yanıttan çıkar
+            response_data = serializer.data
+            response_data.pop('password', None)
+            
+            return Response(response_data, status=status.HTTP_200_OK)
+        
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def change_password(request):
+    """
+    Kullanıcı şifresini günceller
+    """
+    user = request.user
+    current_password = request.data.get('current_password')
+    new_password = request.data.get('new_password')
+    
+    # Gerekli alanların kontrolü
+    if not current_password or not new_password:
+        return Response(
+            {'error': 'Mevcut şifre ve yeni şifre gereklidir.'},
+            status=status.HTTP_400_BAD_REQUEST
+        )
+    
+    # Mevcut şifrenin doğruluğunu kontrol et
+    if not user.check_password(current_password):
+        return Response(
+            {'error': 'Mevcut şifre yanlış.'},
+            status=status.HTTP_400_BAD_REQUEST
+        )
+    
+    # Yeni şifreyi doğrula
+    try:
+        validate_password(new_password, user)
+    except ValidationError as e:
+        return Response(
+            {'error': e.messages},
+            status=status.HTTP_400_BAD_REQUEST
+        )
+    
+    # Şifreyi güncelle
+    user.set_password(new_password)
+    user.save()
+    
+    # Kullanıcıyı yeniden giriş yapmaya zorlamak için yeni token oluştur
+    refresh = RefreshToken.for_user(user)
+    
+    return Response({
+        'success': 'Şifre başarıyla güncellendi.',
+        'refresh': str(refresh),
+        'access': str(refresh.access_token)
+    }, status=status.HTTP_200_OK)
