@@ -7,6 +7,7 @@ from django.contrib.auth import get_user_model
 from django.db.models import Q
 from .models import Conversation, Message
 from .serializers import ConversationSerializer, MessageSerializer
+from notifications.utils import create_notification
 
 User = get_user_model()
 
@@ -103,11 +104,22 @@ def send_message(request, pk):
         )
     
     # Yeni mesaj oluştur
+    # In the send_message view, after creating message:
     message = Message.objects.create(
         conversation=conversation,
         sender=request.user,
         content=content
     )
+    
+    # Create notification for other participants
+    for participant in conversation.participants.exclude(id=request.user.id):
+        create_notification(
+            recipient=participant,
+            sender=request.user,
+            notification_type='message',
+            text=f"New message from {request.user.username}",
+            message=message
+        )
     
     # Konuşmanın son güncelleme zamanını güncelle
     conversation.save()  # updated_at alanı auto_now=True olduğu için otomatik güncellenir

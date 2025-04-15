@@ -7,6 +7,7 @@ from django.shortcuts import get_object_or_404
 from .models import Post, PostMedia, Like, Comment
 from .serializers import PostSerializer, PostMediaSerializer, CommentSerializer
 from django.db import transaction
+from notifications.utils import create_notification
 
 @api_view(['GET', 'POST'])
 @permission_classes([IsAuthenticated])

@@ -6,6 +6,7 @@ from django.shortcuts import get_object_or_404
 from django.contrib.auth import get_user_model
 from .models import UserRelationship
 from .serializers import UserRelationshipSerializer, UserBriefSerializer
+from notifications.utils import create_notification
 
 User = get_user_model()
 
@@ -33,7 +34,14 @@ def follow_user(request, user_id):
             followed=followed_user
         )
         
+        # In the follow_user view, after creating relationship:
         if created:
+            create_notification(
+                recipient=followed_user,
+                sender=request.user,
+                notification_type='follow',
+                text=f"{request.user.username} started following you"
+            )
             serializer = UserRelationshipSerializer(relationship)
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         
