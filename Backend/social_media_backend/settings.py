@@ -1,12 +1,12 @@
 from pathlib import Path
-import os
-from tkinter.constants import TRUE
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-SECRET_KEY = os.environ.get("SECRET_KEY")
-DEBUG = os.environ.get("DEBUG", "False") == "True"
-ALLOWED_HOSTS = os.environ.get("ALLOWED_HOSTS", "").split(",")
+SECRET_KEY = 'django-insecure-l_g^kb0c3(*+&z^por2b8(!n5advhs^5ff62#*uyurngqxggv7'
+
+DEBUG = True
+
+ALLOWED_HOSTS = []
 
 INSTALLED_APPS = [
     'accounts',
@@ -64,11 +64,11 @@ WSGI_APPLICATION = 'social_media_backend.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': os.environ.get('DB_NAME'),
-        'USER': os.environ.get('DB_USER'),
-        'PASSWORD': os.environ.get('DB_PASSWORD'),
-        'HOST': os.environ.get('DB_HOST'),
-        'PORT': os.environ.get('DB_PORT'),
+        'NAME': 'postgres',
+        'USER': 'postgres.uannfbtnsriugnslfakf',
+        'PASSWORD': 'EV$M89p-zbik8.?',
+        'HOST': 'aws-0-eu-central-1.pooler.supabase.com',
+        'PORT': '6543',
     }
 }
 
