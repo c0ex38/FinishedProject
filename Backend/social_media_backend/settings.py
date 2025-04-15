@@ -12,6 +12,7 @@ INSTALLED_APPS = [
     'accounts',
     'posts',
     'relationships',
+    'direct_messages',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
