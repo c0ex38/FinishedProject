@@ -13,13 +13,41 @@ from django.db import transaction
 @parser_classes([MultiPartParser, FormParser])
 def post_list_create(request):
     """
-    GET: Tüm gönderileri listeler
+    GET: Gönderileri listeler (filtre parametrelerine göre)
     POST: Yeni bir gönderi oluşturur
     """
     if request.method == 'GET':
-        posts = Post.objects.filter(is_public=True)
+        # Filtre parametresini al
+        filter_type = request.query_params.get('filter', 'all')
+        
+        # Temel sorgu: Herkese açık gönderiler
+        posts_query = Post.objects.filter(is_public=True)
+        
+        if filter_type == 'following':
+            # Kullanıcının takip ettiği kişilerin gönderilerini getir
+            following_users = request.user.following.values_list('followed', flat=True)
+            posts_query = posts_query.filter(author__in=following_users)
+        elif filter_type == 'my':
+            # Kullanıcının kendi gönderilerini getir (gizli olanlar dahil)
+            posts_query = Post.objects.filter(author=request.user)
+        # 'all' filtresi için ek bir işlem gerekmez, varsayılan olarak tüm public postları getirir
+        
+        # Sayfalama için limit ve offset parametrelerini al
+        limit = int(request.query_params.get('limit', 10))
+        offset = int(request.query_params.get('offset', 0))
+        
+        # Sorguyu sınırla
+        posts = posts_query[offset:offset+limit]
+        
         serializer = PostSerializer(posts, many=True, context={'request': request})
-        return Response(serializer.data)
+        
+        # Toplam post sayısını da döndür
+        return Response({
+            'count': posts_query.count(),
+            'next': offset + limit if offset + limit < posts_query.count() else None,
+            'previous': offset - limit if offset > 0 else None,
+            'results': serializer.data
+        })
     
     elif request.method == 'POST':
         # Medya dosyası kontrolü
