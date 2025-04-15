@@ -9,7 +9,7 @@ services:
     startCommand: cd Backend && gunicorn social_media_backend.wsgi:application
     envVars:
       - key: SECRET_KEY
-        value: django-insecure-l_g^kb0c3(*+&z^por2b8(!n5advhs^5ff62#*uyurngqxggv7
+        value: "django-insecure-l_g^kb0c3(*+&z^por2b8(!n5advhs^5ff62#*uyurngqxggv7"
       - key: DEBUG
         value: False
       - key: ALLOWED_HOSTS
@@ -19,7 +19,7 @@ services:
       - key: DB_USER
         value: postgres.uannfbtnsriugnslfakf
       - key: DB_PASSWORD
-        value: EV$M89p-zbik8.?
+        value: "EV$M89p-zbik8.?"
       - key: DB_HOST
         value: aws-0-eu-central-1.pooler.supabase.com
       - key: DB_PORT
