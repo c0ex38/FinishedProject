@@ -71,7 +71,6 @@ class PostMedia(models.Model):
     def __str__(self):
         return f"{self.post.id} - {self.media_type} ({self.order})"
     
-    # Post modelinin save metodunu güncelleyelim
     def save(self, *args, **kwargs):
         is_new = self.pk is None
         super().save(*args, **kwargs)
@@ -79,6 +78,26 @@ class PostMedia(models.Model):
         # Hashtag'leri işle
         from search.utils import process_post_hashtags
         process_post_hashtags(self)
+        
+        # Lokasyon bilgisini işle
+        if self.latitude and self.longitude:
+            from locations.models import Location, PostLocation
+            
+            # Lokasyonu bul veya oluştur
+            location, created = Location.objects.get_or_create(
+                latitude=self.latitude,
+                longitude=self.longitude,
+                defaults={
+                    'name': self.location_name or 'Unnamed Location',
+                }
+            )
+            
+            # Post ile lokasyonu ilişkilendir
+            PostLocation.objects.get_or_create(post=self, location=location)
+            
+            # Lokasyon post sayısını güncelle
+            location.post_count = location.posts.count()
+            location.save()
 
 
 class Like(models.Model):

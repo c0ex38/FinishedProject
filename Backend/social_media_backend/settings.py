@@ -14,6 +14,8 @@ INSTALLED_APPS = [
     'relationships',
     'direct_messages',
     'notifications',
+    'locations',
+    'events',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',

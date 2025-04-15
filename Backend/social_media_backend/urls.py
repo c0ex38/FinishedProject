@@ -11,6 +11,8 @@ urlpatterns = [
     path('api/messages/', include('direct_messages.urls')),
     path('api/notifications/', include('notifications.urls')),
     path('api/search/', include('search.urls')),
+    path('api/locations/', include('locations.urls')),
+    path('api/events/', include('events.urls')),
 ]
 
 # Serve media files in development
