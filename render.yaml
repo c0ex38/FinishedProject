@@ -2,11 +2,8 @@ services:
   - type: web
     name: social-media-backend
     env: python
-    buildCommand: |
-      cd Backend
-      pip install -r requirements.txt
-      python manage.py collectstatic --noinput
-    startCommand: cd Backend && gunicorn social_media_backend.wsgi:application
+    buildCommand: pip install -r requirements.txt && python manage.py collectstatic --noinput
+    startCommand: gunicorn social_media_backend.wsgi:application
     envVars:
       - key: SECRET_KEY
         value: "django-insecure-l_g^kb0c3(*+&z^por2b8(!n5advhs^5ff62#*uyurngqxggv7"
@@ -24,3 +21,6 @@ services:
         value: aws-0-eu-central-1.pooler.supabase.com
       - key: DB_PORT
         value: 6543
+    buildFilter:
+      paths:
+        - Backend/**
