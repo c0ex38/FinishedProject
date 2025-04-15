@@ -10,6 +10,7 @@ urlpatterns = [
     path('api/relationships/', include('relationships.urls')),
     path('api/messages/', include('direct_messages.urls')),
     path('api/notifications/', include('notifications.urls')),
+    path('api/search/', include('search.urls')),
 ]
 
 # Serve media files in development

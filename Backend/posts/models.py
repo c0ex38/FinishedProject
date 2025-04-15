@@ -71,18 +71,14 @@ class PostMedia(models.Model):
     def __str__(self):
         return f"{self.post.id} - {self.media_type} ({self.order})"
     
+    # Post modelinin save metodunu güncelleyelim
     def save(self, *args, **kwargs):
-        # Bir post için en fazla 5 medya olabilir
-        if not self.pk and self.post.media.count() >= 5:
-            raise ValueError("Bir post için en fazla 5 medya eklenebilir.")
-        
-        # Video dosyaları için süre kontrolü yapılabilir (burada basit bir kontrol)
-        if self.media_type == 'video':
-            # Video işleme kütüphanesi ile süre kontrolü yapılabilir
-            # Örnek: from moviepy.editor import VideoFileClip
-            pass
-            
+        is_new = self.pk is None
         super().save(*args, **kwargs)
+        
+        # Hashtag'leri işle
+        from search.utils import process_post_hashtags
+        process_post_hashtags(self)
 
 
 class Like(models.Model):
